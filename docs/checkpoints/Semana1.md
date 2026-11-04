@@ -17,3 +17,20 @@
 - Construir el Producer en Python para generación continua de telemetría.
 - Configurar Spark Structured Streaming consumiendo de Kafka y escribiendo en la capa RAW/Processed del Data Lake en Parquet.
 - Activar el flujo de CI en GitHub Actions para validación de sintaxis y pytest.
+
+**6. Enlaces a Issues**
+- **Definir contrato JSON del evento y ejemplo en samples/:** https://github.com/NicolasfGonzalez/RapidGo-Seguridad/issues/1
+- **Definir la arquitectura especifica de la variante (Diagrama Pipeline):** https://github.com/NicolasfGonzalez/RapidGo-Seguridad/issues/6
+- **Definir mínimo 3 KPIs y 2 reglas de alerta con umbrales iniciales:** https://github.com/NicolasfGonzalez/RapidGo-Seguridad/issues/2
+- **Definir topic, key y número de particiones de Kafka y justificarlo:** https://github.com/NicolasfGonzalez/RapidGo-Seguridad/issues/3
+- **Actualizar README inicial con problema, equipo, variante y arquitectura:** https://github.com/NicolasfGonzalez/RapidGo-Seguridad/issues/4
+- **Crear ADR-001: decisión sobre key/particiones o decisión arquitectónica equivalente:** https://github.com/NicolasfGonzalez/RapidGo-Seguridad/issues/5
+- **Crear Docker Compose Preliminar:** https://github.com/NicolasfGonzalez/RapidGo-Seguridad/issues/10
+- **Crear Documento Checkpoint semana 1:** https://github.com/NicolasfGonzalez/RapidGo-Seguridad/issues/25
+
+**7. Enlaces a Pull Request**
+- **chore: contrato JSON y docker-compose preliminar:** https://github.com/NicolasfGonzalez/RapidGo-Seguridad/pull/26
+- **chore: Arquitectura, checkpoint y ADR-001:** https://github.com/NicolasfGonzalez/RapidGo-Seguridad/pull/28
+- **docs: Primera actualización del documento README:** https://github.com/NicolasfGonzalez/RapidGo-Seguridad/pull/27
+
+
