@@ -17,6 +17,19 @@ La implementación del esquema arquitectónico documentado en el ADR-002: escrib
 - **Mitigación:** En la siguiente fase se deberá ajustar el *trigger interval* en el método `writeStream` para generar lotes más grandes, o diseñar un proceso *batch* asíncrono (ej. una tarea en Airflow o un script cron programado) que periódicamente compacte los archivos pequeños de la carpeta `processed/security_telemetry` en archivos de mayor tamaño optimizados (aprox. 128 MB a 1 GB).
 
 **5. Plan para la Semana 3 y Trazabilidad**
-- Diseñar y desplegar la capa de servicio (Serving Layer): Enviar métricas procesadas a una base de datos relacional (ej. PostgreSQL) o NoSQL para habilitar consultas rápidas.
-- Integrar una herramienta de visualización (ej. Grafana, Metabase o PowerBI) que lea las alertas de seguridad y muestre los repartidores en estado crítico en un dashboard en tiempo real.
-- Modularizar y optimizar la infraestructura de Docker Compose para simular el ambiente de producción de forma integral.
+- Construcción del Directed Acyclic Graph (DAG) para la planeación del workflow que controle los nodos.
+- Pruebas usando Docker generando fallos intencionales y la documentación de los mismas.
+- Ampliación de los Git Actions para validar el funcionamiento del workflow.
+
+**6. Enlaces a Issues**
+- **Implementar Kafka con varias particiones y key implementada:** https://github.com/NicolasfGonzalez/RapidGo-Seguridad/issues/8
+- **Crear producer funcional y eventos identificables:** https://github.com/NicolasfGonzalez/RapidGo-Seguridad/issues/7
+- **Implementar Spark Structured Streaming consumiendo eventos:** https://github.com/NicolasfGonzalez/RapidGo-Seguridad/issues/9
+- **Realizar pruebas en test/ con pruebas de regla y/o contrato de evento:** https://github.com/NicolasfGonzalez/RapidGo-Seguridad/issues/11
+- **Crear ADR-002 basado en decisiones técnicas y checkpoint de semana 2:** https://github.com/NicolasfGonzalez/RapidGo-Seguridad/issues/12
+- **Configuración de Integración Continua (CI):** https://github.com/NicolasfGonzalez/RapidGo-Seguridad/issues/29
+
+**7. Enlaces a Pull Request**
+- **ci: configurar GitHub Actions para validacion en ramas QA:** https://github.com/NicolasfGonzalez/RapidGo-Seguridad/pull/30
+- **feat: Implementación del producer y del consumidor Spark** https://github.com/NicolasfGonzalez/RapidGo-Seguridad/pull/31
+- **docs: Crear ADR y registro de checkpoint para la semana 2 y sus avances.** https://github.com/NicolasfGonzalez/RapidGo-Seguridad/pull/32
