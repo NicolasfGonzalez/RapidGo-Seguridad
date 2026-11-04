@@ -33,3 +33,6 @@ La implementación del esquema arquitectónico documentado en el ADR-002: escrib
 - **ci: configurar GitHub Actions para validacion en ramas QA:** https://github.com/NicolasfGonzalez/RapidGo-Seguridad/pull/30
 - **feat: Implementación del producer y del consumidor Spark** https://github.com/NicolasfGonzalez/RapidGo-Seguridad/pull/31
 - **docs: Crear ADR y registro de checkpoint para la semana 2 y sus avances.** https://github.com/NicolasfGonzalez/RapidGo-Seguridad/pull/32
+
+**8. Enlaces a Git Actions**
+- **CI RapidGo Seguridad:** https://github.com/NicolasfGonzalez/RapidGo-Seguridad/actions/workflows/ci.yml
