@@ -1,10 +1,19 @@
-# SEMANA 1 (v0.1.0-foundation)
-# Validación de sintaxis: docker compose config --quiet
+volumes:
+  postgres_data:
+  
+networks:
+  rapidgo-net:
+    driver: bridge
 
 services:
+  # ==========================================
+  # CAPA 1: KAFKA (Streaming Ingestion)
+  # ==========================================
   kafka:
     image: apache/kafka:4.3.1        
     container_name: rg-kafka
+    networks:
+      - rapidgo-net
     ports:
       - "9092:9092"                    # Acceso para el productor local en Python
     environment:
@@ -26,9 +35,11 @@ services:
       timeout: 10s
       retries: 12
 
-  kafka-init:                          # Crea automáticamente el topic de seguridad y finaliza
+  kafka-init:                           # Crea automáticamente el topic de seguridad
     image: apache/kafka:4.3.1
     container_name: rg-kafka-init
+    networks:
+      - rapidgo-net
     depends_on:
       kafka:
         condition: service_healthy
@@ -38,3 +49,61 @@ services:
         /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:29092 --create --if-not-exists
         --topic driver_security_events --partitions 3 --replication-factor 1
     restart: "no"
+
+  # ==========================================
+  # CAPA 2: AIRFLOW (Orquestación - Semana 3)
+  # ==========================================
+  postgres:
+    image: postgres:15
+    container_name: rg-postgres
+    networks:
+      - rapidgo-net
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 10s
+      retries: 5
+      start_period: 5s
+    restart: always
+
+  airflow-webserver:
+    image: apache/airflow:2.8.1-python3.11
+    container_name: rg-airflow-webserver
+    networks:
+      - rapidgo-net
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      &airflow-env
+      AIRFLOW__CORE__EXECUTOR: SequentialExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./datalake:/opt/airflow/datalake
+    command: webserver
+
+  airflow-scheduler:
+    image: apache/airflow:2.8.1-python3.11
+    container_name: rg-airflow-scheduler
+    networks:
+      - rapidgo-net
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      *airflow-env
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./datalake:/opt/airflow/datalake
+    command: scheduler
