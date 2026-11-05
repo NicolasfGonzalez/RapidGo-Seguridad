@@ -1,12 +1,13 @@
 import json
 import time
 import random
-from datetime import datetime
+from datetime import datetime, timezone
 from kafka import KafkaProducer
 
 # Configuración del Producer de Kafka (Usando el tópico del docker-compose)
-bootstrap_servers = ['localhost:9092']
+bootstrap_servers = ['127.0.0.1:9092']
 topic_name = 'driver_security_events'
+
 
 producer = KafkaProducer(
     bootstrap_servers=bootstrap_servers,
@@ -29,7 +30,7 @@ try:
                 "speed": round(random.uniform(10.0, 75.0), 2),       # Alerta si > 45
                 "battery_level": random.randint(5, 100),            # Alerta si < 15
                 "status": random.choice(["in_transit", "stopped", "delivering"]),
-                "timestamp": datetime.utcnow().isoformat() + "Z"
+                "timestamp": datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z")
             }
 
             # courier_id como partition key para mantener el orden
