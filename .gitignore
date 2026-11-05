@@ -1,1 +1,9 @@
 .venv/
+datalake/processed/
+datalake/raw/
+datalake/curated/
+datalake/checkpoints/
+data/checkpoints/
+data/processed/
+data/checkpoints/
+airflow/logs/
