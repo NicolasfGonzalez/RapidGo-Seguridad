@@ -6,3 +6,4 @@ datalake/checkpoints/
 data/checkpoints/
 data/processed/
 data/checkpoints/
+airflow/logs/

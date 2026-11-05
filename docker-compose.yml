@@ -130,6 +130,7 @@ services:
     volumes:
       - ./airflow/dags:/opt/airflow/dags
       - ./datalake:/opt/airflow/datalake
+      - ./airflow/logs:/opt/airflow/logs
     command: >
       bash -c "pip install --no-cache-dir pandas numpy pyarrow &&
            airflow webserver"
@@ -147,6 +148,7 @@ services:
     volumes:
       - ./airflow/dags:/opt/airflow/dags
       - ./datalake:/opt/airflow/datalake
+      - ./airflow/logs:/opt/airflow/logs
     command: >
       bash -c "pip install --no-cache-dir pandas numpy pyarrow &&
            airflow scheduler"
