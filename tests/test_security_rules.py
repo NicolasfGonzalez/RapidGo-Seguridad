@@ -36,3 +36,11 @@ def test_invalid_telemetry_raises_exception():
         evaluate_courier_risk(-5.0, 50)
     with pytest.raises(ValueError):
         evaluate_courier_risk(30.0, 150)
+
+def test_priority_critical_battery_over_speeding():
+    """
+    Caso múltiple: Si el repartidor tiene exceso de velocidad Y batería crítica al mismo tiempo,
+    el sistema debe priorizar la alerta de batería crítica (evaluada primero en el flujo).
+    """
+    # Velocidad de 60.0 (> 45.0) y Batería de 10 (< 15)
+    assert evaluate_courier_risk(60.0, 10) == "CRITICAL_BATTERY"
