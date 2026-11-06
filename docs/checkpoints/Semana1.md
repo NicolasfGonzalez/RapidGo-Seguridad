@@ -1,3 +1,5 @@
+# Checkpoint de Seguimiento - Semana 1
+
 **1. Qué quedó funcionando esta semana**
 - Repositorio de GitHub creado con los 3 colaboradores configurados (Karith Ávila, Nicolas Gonzalez, Laura Ortiz)
 - Tablero GitHub Projects (Kanban) con columnas BACKLOG, READY, IN PROGRESS, REVIEW, DONE y más de 12 Issues creados e individualmente asignados.

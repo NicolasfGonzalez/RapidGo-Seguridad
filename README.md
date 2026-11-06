@@ -41,8 +41,55 @@ Durante la segunda iteración se materializó el flujo de datos (End-to-End) des
 
 ## 2. Calidad de Código e Integración Continua (CI)
 Para garantizar la estabilidad del pipeline, se implementaron prácticas de DevOps:
-- **Automatización con GitHub Actions:** Se configuró el archivo `CI.yml` que se dispara automáticamente ante *pushes* o *Pull Requests* hacia las ramas `main` y `QA`.
+- **Automatización con GitHub Actions:** Se configuró el archivo `ci.yml` que se dispara automáticamente ante *pushes* o *Pull Requests* hacia las ramas `main` y `QA`.
 - **Pruebas Unitarias (Pytest):** La lógica de validación de las alertas operacionales fue separada en el archivo `test_security_rules.py`, permitiendo verificar límites máximos de velocidad, umbrales de batería, y rechazo de data corrupta. El pipeline CI ejecuta estas pruebas antes de aprobar los cambios.
+
+---
+
+# Semana 3
+## 1. Orquestación con Apache Airflow
+Se implementó el DAG `dag_seguridad_repartidores` (`airflow/dags/rapidgo_security_orchestration.py`), que se ejecuta cada hora (`@hourly`) y controla la calidad de los datos que Spark deja en el Data Lake antes de calcular los KPIs y generar el reporte de alertas.
+
+| # | Task | Función |
+|---|------|---------|
+| 1 | `validar_fuente` | Verifica que exista la partición del día y que tenga archivos Parquet. |
+| 2 | `validar_esquema` | Verifica que cada Parquet cumpla el contrato (columnas y tipos). |
+| 3 | `verificar_frescura` | Verifica que el último Parquet no sea más antiguo que `FRESHNESS_MAX_MIN` (3 min por defecto). Devuelve `corte_mtime` por **XCom**. |
+| 4 | `kpi_velocidad`, `kpi_bateria`, `kpi_desvios` | Se ejecutan en paralelo sobre la misma "foto" de datos (`mtime <= corte_mtime`). |
+| 5 | `verificar_calidad_datos` | Valida nulos, rangos plausibles y coherencia entre las tres ramas de KPIs. |
+| 6 | `generar_reporte_alertas` | Genera el reporte (`reporte_*.txt`) y los KPIs (`kpis_*.json`) en la capa `Curated`. |
+
+**Flujo:** `validar_fuente → validar_esquema → verificar_frescura → [kpi_velocidad, kpi_bateria, kpi_desvios] → verificar_calidad_datos → generar_reporte_alertas`
+
+## 2. Resiliencia y Fallo Controlado
+Según el **ADR-003**, los fallos se clasifican en:
+- **Transitorios** (`validar_fuente`, `verificar_frescura`): se reintentan (`verificar_frescura` con 3 reintentos cada 2 minutos).
+- **Lógicos** (`validar_esquema`, `verificar_calidad_datos`): no se reintentan, porque repetir la tarea no corrige un contrato roto ni un dato inválido.
+- **Registro de incidentes:** los callbacks de fallo y reintento escriben en `datalake/curated/incidents/incidentes_<fecha>.jsonl`.
+
+**Fallo controlado demostrado:** se detuvo el contenedor `spark-consumer` mientras el producer seguía enviando eventos. `verificar_frescura` falló con el mensaje *"el ultimo Parquet se escribio hace 23.1 min (maximo permitido: 3.0 min)"*, las 5 tareas siguientes no se ejecutaron y, tras reiniciar el consumidor y hacer *Clear task*, el DAG se recuperó completo (intento 5 en `success`). La evidencia está en [`docs/checkpoints/week3.md`](docs/checkpoints/week3.md).
+
+## 3. Integración Continua Ampliada
+El workflow `ci.yml` ahora, además de validar sintaxis, ejecutar `pytest` y validar `docker compose config`, **importa el DAG con `DagBag`** y falla si hay errores de importación. Se fijó Python 3.11 para ser compatible con Airflow 2.8.1, y se agregó la prueba `test_priority_critical_battery_over_speeding` (la batería crítica tiene prioridad sobre el exceso de velocidad).
+
+## 4. Cómo Ejecutar el Entorno Local
+```bash
+# 1. Levantar Kafka, Spark, PostgreSQL y Airflow
+docker compose up -d
+
+# 2. Iniciar el generador de eventos
+python producer/courier_producer.py
+
+# 3. Abrir Airflow en http://localhost:8080 (usuario: admin / contraseña: admin, solo entorno local)
+#    y ejecutar el DAG dag_seguridad_repartidores
+
+# 4. Ejecutar las pruebas
+pytest -v
+```
+
+## 5. Documentación de la Semana
+- Checkpoint: [`docs/checkpoints/week3.md`](docs/checkpoints/week3.md)
+- Decisión de arquitectura: [`ADR-003`](docs/decisions/ADR-003-orchestration-and-failure-recovery.md)
 
 ---
 
@@ -50,28 +97,35 @@ Para garantizar la estabilidad del pipeline, se implementaron prácticas de DevO
 ```text
 rapidgo-variante2-seguridad/
 ├── .github/workflows/
-│   └── CI.yml                    # Pipeline de Integración Continua (Acciones de validación)
-├── airflow/dags/                 # DAGs de Orquestación (Por implementar)
+│   └── ci.yml                    # CI: sintaxis, pytest, docker compose e importación del DAG
+├── airflow/
+│   ├── dags/
+│   │   └── rapidgo_security_orchestration.py  # DAG dag_seguridad_repartidores (8 tasks)
+│   └── logs/                     # Logs de Airflow (volumen compartido entre contenedores)
 ├── datalake/                     # Persistencia Parquet
 │   ├── checkpoints/              # Estado y offsets de Spark Streaming
-│   └── processed/                # Data validada y persistida en Parquet
+│   ├── processed/                # Data validada y persistida en Parquet
+│   └── curated/                  # Reportes, KPIs e incidentes generados por Airflow
 ├── docs/                         # Documentación de arquitectura y reportes
-│   ├── arquitectura.png          # Diagrama del pipeline
+│   ├── architecture.png          # Diagrama del pipeline
 │   ├── checkpoints/
-│   │   ├── semana1.md            # Reporte Checkpoint Semana 1
-│   │   └── semana2.md            # Reporte Checkpoint Semana 2
+│   │   ├── Semana1.md            # Reporte Checkpoint Semana 1
+│   │   ├── Semana2.md            # Reporte Checkpoint Semana 2
+│   │   ├── week3.md              # Reporte Checkpoint Semana 3
+│   │   └── img/week3/            # Evidencias de ejecución (capturas)
 │   └── decisions/
-│       ├── ADR-001-partitioning-kafka.md # Decisión sobre Particiones y Keys
-│       └── ADR-002-columnar-storage-and-fault-tolerance-in-streaming.md # Decisión sobre Parquet y Checkpointing
+│       ├── ADR-001-partitioning-kafka.md
+│       ├── ADR-002-Columnar Storage and Fault Tolerance in Streaming.md
+│       └── ADR-003-orchestration-and-failure-recovery.md
 ├── producer/
 │   └── courier_producer.py       # Generador de telemetría hacia Kafka
 ├── samples/
-│   └── evento_sample.json        # Contrato de datos de prueba
+│   └── event_example.json        # Contrato de datos de prueba
 ├── spark/
 │   └── streaming_consumer.py     # Lógica Spark Streaming, Watermarking y Sink a Parquet
 ├── tests/
-│   └── test_security_rules.py    # Pruebas automatizadas (Pytest) de KPIs
-├── docker-compose.yml            # Entorno local comprimido (Kafka, Spark, etc)
+│   └── test_security_rules.py    # Pruebas automatizadas (Pytest) de reglas de seguridad
+├── docker-compose.yml            # Kafka, Spark, PostgreSQL y Airflow (webserver, scheduler, init)
 ├── README.md                     # Documento principal
-└── requirements.txt              # Librerías de Python (pytest, kafka-python, pyspark)
+└── requirements.txt              # Librerías de Python
 ```
