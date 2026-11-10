@@ -29,29 +29,40 @@ def main():
         .option("failOnDataLoss", "false") \
         .load()
 
+    # CORRECCIÓN 1: Agregar event_date directamente al parsed_df
     parsed_df = kafka_df.selectExpr("CAST(value AS STRING) AS json_str") \
         .select(from_json(col("json_str"), schema).alias("data")) \
         .select("data.*") \
-        .withColumn("event_time", col("timestamp").cast(TimestampType()))
+        .withColumn("event_time", col("timestamp").cast(TimestampType())) \
+        .withColumn("event_date", col("event_time").cast("date"))
 
+    # CORRECCIÓN 2: Declarar alerted_df una sola vez
     alerted_df = parsed_df \
         .withColumn("speed_alert", col("speed") > 45.0) \
-        .withColumn("battery_alert", col("battery_level") < 15) \
-        .withColumn("event_date", col("event_time").cast("date"))
+        .withColumn("battery_alert", col("battery_level") < 15)
 
     windowed_avg_df = alerted_df \
         .withWatermark("event_time", "10 minutes") \
         .groupBy(window(col("event_time"), "5 minutes", "1 minute"), col("courier_id")) \
         .agg(avg("speed").alias("avg_speed"))
 
-    # Salida 1: consola con alertas
+    # Salida 1: Escribir datos crudos (Raw) en el Data Lake
+    raw_q = parsed_df.writeStream \
+        .format("parquet") \
+        .option("path", "/opt/app/datalake/raw/security_telemetry") \
+        .option("checkpointLocation", "/opt/app/datalake/checkpoints/raw_security_telemetry") \
+        .partitionBy("event_date") \
+        .outputMode("append") \
+        .start()
+
+    # Salida 2: consola con alertas
     alerts_q = alerted_df.writeStream \
         .outputMode("append") \
         .format("console") \
         .option("truncate", "false") \
         .start()
 
-    # Salida 2: Data Lake (Parquet)
+    # Salida 3: Data Lake (Processed)
     datalake_q = alerted_df.writeStream \
         .format("parquet") \
         .option("path", "/opt/app/datalake/processed/security_telemetry") \
@@ -61,7 +72,7 @@ def main():
         .outputMode("append") \
         .start()
 
-    # Salida 3: promedio por ventana 
+    # Salida 4: promedio por ventana 
     window_q = windowed_avg_df.writeStream \
         .outputMode("update") \
         .format("console") \
