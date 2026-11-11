@@ -1,0 +1,61 @@
+name: CI RapidGo Seguridad
+run-name: CI ejecutado por ${{ github.actor }}
+
+on:
+  push:
+    branches: ['main', 'QA', 'QA.*'] 
+  pull_request:
+    branches: ['main', 'QA']
+  workflow_dispatch:
+
+jobs:
+  validar-python:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v6
+        
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11" 
+          
+      - name: Instalar dependencias
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          
+      - name: Validar sintaxis
+        run: |
+          for dir in producer spark tests; do
+            if [ -d "$dir" ]; then python -m compileall "$dir"; fi
+          done
+        
+      - name: Ejecutar pruebas
+        run: pytest -v
+        
+      - name: Validar Docker Compose
+        run: docker compose config --quiet
+
+      - name: Validar e importar DAG de Airflow
+        env:
+          AIRFLOW_HOME: /tmp/airflow
+        run: |
+          # Instalar dependencias necesarias para que el DAG compile en el CI
+          pip install apache-airflow==2.8.1 pandas numpy pyarrow
+          
+          # Validar el DAG usando DagBag
+          python -c "
+          import sys
+          from airflow.models import DagBag
+          
+          dagbag = DagBag('airflow/dags', include_examples=False)
+          
+          if dagbag.import_errors:
+              print('❌ Errores de importación detectados en los DAGs:')
+              for filepath, error in dagbag.import_errors.items():
+                  print(f'{filepath}: {error}')
+              sys.exit(1)
+          else:
+              print('✅ Todos los DAGs se importaron correctamente sin errores.')
+          "

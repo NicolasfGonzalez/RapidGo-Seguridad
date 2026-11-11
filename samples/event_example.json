@@ -1,0 +1,21 @@
+{
+  "event_id": "EVT-20261020-98421",
+  "driver_id": "COU-8472",
+  "order_id": "ORD-9938",
+  "timestamp": "2026-10-20T19:22:00Z",
+  "gps": {
+    "latitude": 4.8136,
+    "longitude": -74.3541
+  },
+  "telemetry": {
+    "speed_kmh": 65.4,
+    "battery_percent": 12,
+    "charging": false,
+    "gps_signal_active": true
+  },
+  "context": {
+    "status": "en_route",
+    "route_deviation_m": 145.5,
+    "idle_minutes": 0.0
+  }
+}
