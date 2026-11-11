@@ -129,3 +129,13 @@ rapidgo-variante2-seguridad/
 ├── README.md                     # Documento principal
 └── requirements.txt              # Librerías de Python
 ```
+# Semana 4 (Cierre y Release v1.0.0)
+## 1. Capa Raw en el Data Lake y Estabilización de Spark
+Con base en el **ADR-004** y los cambios consolidados en los PRs **#38** y **#39**, se estructuró el pipeline para garantizar máxima trazabilidad y resiliencia:
+- **Doble capa de almacenamiento:** Se añadió el flujo `raw_q` para respaldar los eventos de telemetría de manera cruda y directa desde Kafka en formato Parquet dentro de `datalake/raw/security_telemetry`.
+- **Optimización del motor:** Se adelantó la creación de la columna de particionamiento `event_date` al DataFrame principal (`parsed_df`) antes de la escritura, previniendo errores de tipo `AnalysisException` y optimizando el uso de memoria en la JVM.
+- **Checkpoints persistentes:** Se fijó la propiedad `.option("checkpointLocation", ...)` conectada al volumen local persistente del host (`./datalake/checkpoint`), evitando la pérdida de offsets y garantizando la recuperación automática ante reinicios de contenedores.
+
+## 2. Unificación del CI y Ejecución Manual (`workflow_dispatch`)
+- **Integración hacia `main`:** Mediante PRs de unificación (PR **#39**), se consolidó el código en la rama principal. Esto permitió habilitar formalmente el botón interactivo del disparador manual del CI (`workflow_dispatch`) en GitHub Actions para todo el equipo.
+- **Validación final:** Todos los integrantes ejecutaron de manera exitosa el pipeline de integración continua, dejando el repositorio listo para el etiquetado oficial de la versión `v1.0.0`.
