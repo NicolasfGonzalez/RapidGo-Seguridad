@@ -6,6 +6,9 @@
 ## Curso: Línea de Profundización I - Big Data.
 ## Institución: Universidad de Cundinamarca.
 
+## Link para video de presentación final: 
+https://youtu.be/Dt8C1R29J28
+
 # Semana 1
 ## 1. Contexto y Planteamiento del Problema
 La variante de Seguridad del Repartidor (Variante 2) procesa en tiempo real los eventos de telemetría emitidos por los dispositivos móviles de la flota. Para evaluar correctamente los KPIs (velocidad promedio, nivel de batería, desvíos de ruta e inactividad) y disparar alertas de seguridad en Spark Structured Streaming.
